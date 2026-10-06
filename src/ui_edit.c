@@ -27,6 +27,7 @@
 #include "prefs.h"
 #include "ui_overlay.h"
 #include "evilloop.h"
+#include "session.h"
 #include <stdlib.h>
 
 static void* ui_edit_cmd (int argc, char **argv, void *data)
@@ -70,11 +71,14 @@ static void* ui_edit_cmd (int argc, char **argv, void *data)
 				node_set (pos, "type","todo");
 				node_set (pos, "done","no");
 			}
+		}			ui_current_scope = tempscope;
+			docmd(pos,"tree_changed");
+			/* tnes: typing over a node (inputbuf path) commits like Enter:
+			   run the same "save" command that F2 is bound to */
+			docmd (pos, "save");
+			session_save (pos);
+			return pos;
 		}
-		ui_current_scope = tempscope;
-		docmd(pos,"tree_changed");
-		return pos;
-	}
 
 	node_backup = node_duplicate (pos);
 	input[0] = 0;
@@ -150,8 +154,12 @@ static void* ui_edit_cmd (int argc, char **argv, void *data)
 				node_set (pos, TEXT, input);
 				if (node_getflag (pos, F_temp))
 					node_setflag (pos, F_temp, 0);
+				/* tnes: commit the edit, then run the same "save"
+				   command that F2 is bound to (autosave-on-enter) */
+				docmd(pos, "tree_changed");
+				docmd (pos, "save");
+				session_save (pos);
 				stop = 1;
-				docmd(pos, "tree_changed");  
 				break;
 			case ui_action_delete:
 				if (cursor_pos < (strlen (input) - 1)) {

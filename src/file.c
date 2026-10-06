@@ -35,6 +35,7 @@
 #include "prefs.h"
 #include "cli.h"
 #include "ui_cli.h"
+#include "session.h"
 
 void init_import (import_state_t * is, Node *node)
 {
@@ -184,15 +185,13 @@ char* fn_expand( char* s )
 }
 
 
-static void* cmd_save (int argc, char **argv, void *data)
+/* Save the database (what the "save" command / F2 does), without
+   updating the session state. Shared by cmd_save and tnes' hooks. */
+void tines_save_db (Node *pos)
 {
-	Node *pos = (Node *) data;
+	if (prefs.readonly)
+		return;
 
-	if(prefs.readonly){
-		docmd (pos, "status \"Read-only mode, not writing to disk.\"\n");
-		return pos;
-	}
-	
 	if (prefs.db_file[0] != (char) 255) { /* magic value of tutorial */
 		{
 			char buf[4096];
@@ -211,9 +210,31 @@ static void* cmd_save (int argc, char **argv, void *data)
 			}
 			docmd (node_root (pos), buf);
 		}
-	} else {
-		/* make tutorial users initial database, if initial database dont exist */
 	}
+}
+
+/* tnes: save the session state (cursor + expanded nodes) and then the
+   database. This is what the "save" command and F2 run. */
+void tines_session_save (Node *pos)
+{
+	session_save (pos);
+	tines_save_db (pos);
+}
+
+static void* cmd_save (int argc, char **argv, void *data)
+{
+	Node *pos = (Node *) data;
+
+	if(prefs.readonly){
+		docmd (pos, "status \"Read-only mode, not writing to disk.\"\n");
+		return pos;
+	}
+
+	/* tnes: remember cursor/expanded state alongside the database */
+	session_save (pos);
+
+	tines_save_db (pos);
+
 	return pos;
 }
 
@@ -242,7 +263,7 @@ static void* cmd_revert (int argc,char **argv, void *data)
 void init_file ()
 {
 	cli_add_command ("save", cmd_save, "");
-	cli_add_help ("save", "Saves the open tree.");
+	cli_add_help ("save", "Saves the open tree (and the tnes session state).");
 
 	cli_add_command ("revert", cmd_revert, "");
 	cli_add_help ("revert", "Reverts to the last saved version.");

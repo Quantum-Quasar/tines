@@ -1,0 +1,17 @@
+tnes 1.11.1 (fork of tines 1.11.1)
+
+	* Renamed the program to tnes so it can coexist with tines.
+	  It still uses the same database, configuration, and file
+	  formats as tines.
+
+	* Autosave on Enter: committing an entry (new node or edit)
+	  now runs the same "save" command as F2.
+
+	* Session restore: the cursor position and expanded nodes are
+	  remembered in a <database>_tnes_session sidecar file and
+	  restored on the next launch. Updated on every save, quit,
+	  timed autosave, and keypress (written only when changed).
+
+	* New commands: session_save, session_restore.
+
+	* New files: src/session.c, src/session.h.

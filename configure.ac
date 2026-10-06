@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([tines], [1.12.0], [bugs@bunny.com])
+AC_INIT([tnes], [1.12.0], [bugs@bunny.com])
 AM_INIT_AUTOMAKE
 LT_INIT
 AC_CONFIG_SRCDIR([config.h.in])

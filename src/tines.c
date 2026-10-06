@@ -57,6 +57,7 @@
 #include "file.h"
 #include "evilloop.h"
 #include "file_copy.h"
+#include "session.h"
 
 extern char opml_scroll[128];
 
@@ -400,6 +401,10 @@ o)pen read_only\n\
             while( os-- )
                 pos = node_recurse(pos);
         }
+
+		/* tnes: restore cursor position and expanded nodes from the
+		   last run (overrides the in-file savepos hint if present) */
+		pos = session_restore (pos);
 	}
 
 	if (prefs.tutorial) {

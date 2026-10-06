@@ -1,5 +1,5 @@
 
-#define PACKAGE "tines"
+#define PACKAGE "tnes"
 #define VERSION "1.11.1"
 #define SHAREDIR "/usr/local/share/tines/"
 #define RCFILEIN "tinesrc"

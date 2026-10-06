@@ -2,7 +2,7 @@
  * autosave.c -- the core of the autosave functionality
  *             
  *
- * Copyright (C) 2001,2003 Øyvind Kolås <pippin@users.sourceforge.net>
+ * Copyright (C) 2001,2003 ï¿½yvind Kolï¿½s <pippin@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -24,6 +24,7 @@
 #include "tree.h"
 #include "prefs.h"
 #include "ui.h"
+#include "session.h"
 #include "libcli/cli.h"
 
 static long nodes_changed=0;        /* counter for number of changes since saves */
@@ -47,6 +48,10 @@ static void autosave_invoke(Node *pos){
 		sync();
 	nodes_changed=0;
 	autosave_timer=0;
+
+	/* tnes: keep session state (cursor + expanded nodes) fresh too,
+	   so it survives even an abnormal exit */
+	session_save (pos);
 }
 
 static void* tree_changed_cmd (int argc, char **argv, void *data)

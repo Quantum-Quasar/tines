@@ -1,7 +1,7 @@
 /*
  * evilloop.c -- The event loop / heart of execution for tines
  *
- * Copyright (C) 2001-2003 Øyvind Kolås <pippin@users.sourceforge.net>
+ * Copyright (C) 2001-2003 ï¿½yvind Kolï¿½s <pippin@users.sourceforge.net>
  * Modified for Tines by Larry Kollar, 2016
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -34,6 +34,7 @@
 #include "ui_cli.h"
 #include "cli.h"
 #include "evilloop.h"
+#include "session.h"
 #include "util_string.h"
 
 char inputbuf[BUFFERLENGTH];
@@ -127,6 +128,10 @@ int quit_tines=0;
 
 static void* cmd_quit(int argc,char **argv,void *data){
 	Node *pos=(Node *)data;
+
+	/* tnes: remember where we were before leaving */
+	session_save (pos);
+
 	quit_tines=1;
 
 
@@ -157,6 +162,8 @@ Node *evilloop (Node *pos)
 			switch (binding->action) {
 				case ui_action_quit:
 					remove_temp (&pos);
+					/* tnes: remember where we were before leaving */
+					session_save (pos);
 					quit_tines = 1;
 					break;
 				case ui_action_command:
@@ -340,6 +347,10 @@ Node *evilloop (Node *pos)
 		} else {
 			docmd(pos, "autosave_check_timeout"); 
 		}
+
+		/* tnes: keep the session state (cursor + expanded nodes) current
+		   after every keypress; session_save only writes when it changed */
+		session_save (pos);
 	}
 	return pos;
 }
