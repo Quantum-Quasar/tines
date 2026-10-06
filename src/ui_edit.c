@@ -71,14 +71,15 @@ static void* ui_edit_cmd (int argc, char **argv, void *data)
 				node_set (pos, "type","todo");
 				node_set (pos, "done","no");
 			}
-		}			ui_current_scope = tempscope;
-			docmd(pos,"tree_changed");
-			/* tnes: typing over a node (inputbuf path) commits like Enter:
-			   run the same "save" command that F2 is bound to */
-			docmd (pos, "save");
-			session_save (pos);
-			return pos;
 		}
+		ui_current_scope = tempscope;
+		docmd(pos,"tree_changed");
+		/* tnes: typing over a node (inputbuf path) commits like Enter:
+		   run the same "save" command that F2 is bound to */
+		docmd (pos, "save");
+		session_save (pos);
+		return pos;
+	}
 
 	node_backup = node_duplicate (pos);
 	input[0] = 0;

@@ -83,6 +83,7 @@ static char *session_build_content (Node *pos, long *len_out)
 	char *buf;
 	size_t cap;
 	size_t used = 0;
+	int written;
 	Node *node;
 	Node *root;
 	int idx;
@@ -94,8 +95,10 @@ static char *session_build_content (Node *pos, long *len_out)
 
 	root = node_root (pos);
 
-	/* upper bound: every node could have an "expanded" line */
+	/* worst-case size: header + longest possible db path + one
+	   "expanded NNNNNNNNNN\n" line per node + cursor line + NUL */
 	cap = 64;
+	cap += strlen (prefs.db_file) + 8;
 	for (node = root; node != NULL; node = node_recurse (node))
 		cap += 32;
 
@@ -103,22 +106,31 @@ static char *session_build_content (Node *pos, long *len_out)
 	if (buf == NULL)
 		return NULL;
 
-	used += (size_t) snprintf (buf + used, cap - used,
-							   "# tnes session state\n");
-	used += (size_t) snprintf (buf + used, cap - used, "db %s\n",
-							   prefs.db_file);
+	/* append or fail: never write a silently truncated session file */
+#define SESSION_APPEND(...) \
+	do { \
+		written = snprintf (buf + used, cap - used, __VA_ARGS__); \
+		if (written < 0 || (size_t) written >= cap - used) { \
+			free (buf); \
+			return NULL; \
+		} \
+		used += (size_t) written; \
+	} while (0)
+
+	SESSION_APPEND ("# tnes session state\n");
+	SESSION_APPEND ("db %s\n", prefs.db_file);
 
 	for (idx = 0, node = root; node != NULL;
 		 idx++, node = node_recurse (node)) {
 		if (node == pos)
 			cur_no = idx;
 		if (node_getflag (node, F_expanded) && node_right (node))
-			used += (size_t) snprintf (buf + used, cap - used,
-									   "expanded %i\n", idx);
+			SESSION_APPEND ("expanded %i\n", idx);
 	}
 
-	used += (size_t) snprintf (buf + used, cap - used, "cursor %i\n",
-							   cur_no);
+	SESSION_APPEND ("cursor %i\n", cur_no);
+
+#undef SESSION_APPEND
 
 	*len_out = (long) used;
 	return buf;
@@ -195,14 +207,20 @@ Node *session_restore (Node *pos)
 
 	while (fgets (line, sizeof (line), file) != NULL) {
 		if (strncmp (line, "cursor ", 7) == 0) {
-			cursor_no = atoi (line + 7);
+			long v = strtol (line + 7, NULL, 10);
+
+			if (v >= 0 && v <= 100000000)
+				cursor_no = (int) v;
 		} else if (strncmp (line, "expanded ", 9) == 0) {
-			int no = atoi (line + 9);
+			long v = strtol (line + 9, NULL, 10);
 			int i;
 
-				/* flat walk from the root to find the numbered node (same walk
-		   order as session_save) */
-			for (i = 0, node = root; i < no && node != NULL; i++)
+			if (v < 0 || v > 100000000)
+				continue;		/* corrupt line: ignore it */
+
+			/* flat walk from the root to find the numbered node (same
+		   walk order as session_save) */
+			for (i = 0, node = root; i < v && node != NULL; i++)
 				node = node_recurse (node);
 			if (node != NULL && node_right (node)) {
 				node_setflag (node, F_expanded, 1);

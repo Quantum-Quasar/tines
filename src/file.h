@@ -33,11 +33,5 @@ int xml_getpos (char *filename);
 /* returns 1 if file exists */
 int file_check (char *filename);
 
-/* tnes: save the database without touching session state */
-void tines_save_db (Node *pos);
-
-/* tnes: save session state (cursor + expanded nodes), then the database */
-void tines_session_save (Node *pos);
-
 
 #endif /* FILE_H */

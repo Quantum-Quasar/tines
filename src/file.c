@@ -185,13 +185,15 @@ char* fn_expand( char* s )
 }
 
 
-/* Save the database (what the "save" command / F2 does), without
-   updating the session state. Shared by cmd_save and tnes' hooks. */
-void tines_save_db (Node *pos)
+static void* cmd_save (int argc, char **argv, void *data)
 {
-	if (prefs.readonly)
-		return;
+	Node *pos = (Node *) data;
 
+	if(prefs.readonly){
+		docmd (pos, "status \"Read-only mode, not writing to disk.\"\n");
+		return pos;
+	}
+	
 	if (prefs.db_file[0] != (char) 255) { /* magic value of tutorial */
 		{
 			char buf[4096];
@@ -210,30 +212,12 @@ void tines_save_db (Node *pos)
 			}
 			docmd (node_root (pos), buf);
 		}
-	}
-}
-
-/* tnes: save the session state (cursor + expanded nodes) and then the
-   database. This is what the "save" command and F2 run. */
-void tines_session_save (Node *pos)
-{
-	session_save (pos);
-	tines_save_db (pos);
-}
-
-static void* cmd_save (int argc, char **argv, void *data)
-{
-	Node *pos = (Node *) data;
-
-	if(prefs.readonly){
-		docmd (pos, "status \"Read-only mode, not writing to disk.\"\n");
-		return pos;
+	} else {
+		/* make tutorial users initial database, if initial database dont exist */
 	}
 
 	/* tnes: remember cursor/expanded state alongside the database */
 	session_save (pos);
-
-	tines_save_db (pos);
 
 	return pos;
 }
