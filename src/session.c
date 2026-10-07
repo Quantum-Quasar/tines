@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -136,15 +137,37 @@ static char *session_build_content (Node *pos, long *len_out)
 	return buf;
 }
 
+/* parse a decimal index after a "<keyword> " prefix; returns -1 if the
+   rest of the line is not a plain number (e.g. "expanded banana" must
+   not be mistaken for index 0) */
+static long session_parse_index (const char *line)
+{
+	char *end;
+	long v;
+
+	v = strtol (line, &end, 10);
+	if (end == line)		/* no digits at all */
+		return -1;
+	while (isspace ((unsigned char) *end))
+		end++;
+	if (*end != 0)			/* trailing garbage */
+		return -1;
+	if (v < 0 || v > 100000000)
+		return -1;
+	return v;
+}
+
 /* save the session file next to the current database;
    no-op when the content is unchanged */
 void session_save (Node *pos)
 {
 	char path[PREFS_FN_LEN + 16];
+	char tmppath[PREFS_FN_LEN + 21];
 	char *new_content;
 	char *old_content;
 	long new_len = 0;
 	long old_len = 0;
+	int plen;
 	FILE *file;
 
 	if (pos == NULL)
@@ -152,7 +175,9 @@ void session_save (Node *pos)
 	if (prefs.db_file[0] == (char) 255)	/* magic value of tutorial */
 		return;
 
-	snprintf (path, sizeof (path), "%s_tnes_session", prefs.db_file);
+	plen = snprintf (path, sizeof (path), "%s_tnes_session", prefs.db_file);
+	if (plen < 0 || (size_t) plen >= sizeof (path))
+		return;				/* path would be truncated */
 
 	new_content = session_build_content (pos, &new_len);
 	if (new_content == NULL)
@@ -167,7 +192,15 @@ void session_save (Node *pos)
 	}
 	free (old_content);
 
-	file = fopen (path, "w");
+	/* write to a temporary file and rename, so a crash mid-write can
+	   never leave a truncated or half-written session file behind */
+	plen = snprintf (tmppath, sizeof (tmppath), "%s.tmp", path);
+	if (plen < 0 || (size_t) plen >= sizeof (tmppath)) {
+		free (new_content);
+		return;
+	}
+
+	file = fopen (tmppath, "w");
 	if (file == NULL) {
 		free (new_content);
 		return;
@@ -178,7 +211,9 @@ void session_save (Node *pos)
 	fclose (file);
 	free (new_content);
 
-	chmod (path, SESSION_FILE_MODE);
+	chmod (tmppath, SESSION_FILE_MODE);
+	if (rename (tmppath, path) != 0)
+		remove (tmppath);	/* keep the old session file instead */
 }
 
 /* restore cursor and expansion state written by session_save().
@@ -198,7 +233,12 @@ Node *session_restore (Node *pos)
 	if (prefs.db_file[0] == (char) 255)	/* magic value of tutorial */
 		return pos;
 
-	snprintf (path, sizeof (path), "%s_tnes_session", prefs.db_file);
+	{
+		int plen = snprintf (path, sizeof (path), "%s_tnes_session",
+							 prefs.db_file);
+		if (plen < 0 || (size_t) plen >= sizeof (path))
+			return pos;		/* path would be truncated */
+	}
 	file = fopen (path, "r");
 	if (file == NULL)
 		return pos;
@@ -207,15 +247,15 @@ Node *session_restore (Node *pos)
 
 	while (fgets (line, sizeof (line), file) != NULL) {
 		if (strncmp (line, "cursor ", 7) == 0) {
-			long v = strtol (line + 7, NULL, 10);
+			long v = session_parse_index (line + 7);
 
-			if (v >= 0 && v <= 100000000)
+			if (v >= 0)
 				cursor_no = (int) v;
 		} else if (strncmp (line, "expanded ", 9) == 0) {
-			long v = strtol (line + 9, NULL, 10);
+			long v = session_parse_index (line + 9);
 			int i;
 
-			if (v < 0 || v > 100000000)
+			if (v < 0)
 				continue;		/* corrupt line: ignore it */
 
 			/* flat walk from the root to find the numbered node (same
@@ -230,12 +270,19 @@ Node *session_restore (Node *pos)
 	}
 	fclose (file);
 
+	/* The "db" line in the file is informational only and is not
+	   checked here: the sidecar name is derived from the database name,
+	   so a mismatch can only happen if the user copied both files on
+	   purpose (e.g. restoring a backup), and then the state is wanted. */
+
 	/* move the cursor to the remembered node (0-based flat index).
 	   Counted from the root of the tree: the caller may already have
 	   moved pos (in-file savepos hint, etc.), so a relative walk would
-	   drift. A stale index (file changed since the last run) falls back
-	   to wherever the caller is, instead of walking off the tree. */
-	if (cursor_no > 0) {
+	   drift. Index 0 (the first visible node) is restored too, so the
+	   session file consistently overrides any in-file hint. A stale
+	   index (file changed since the last run) falls back to wherever
+	   the caller is, instead of walking off the tree. */
+	if (cursor_no >= 0) {
 		Node *target;
 		int i;
 
@@ -246,7 +293,7 @@ Node *session_restore (Node *pos)
 			pos = target;
 	}
 
-	if (cursor_no > 0 || any_expanded)
+	if (cursor_no >= 0 || any_expanded)
 		cli_outfunf ("tnes: session restored (cursor %i, %i expanded)",
 					 cursor_no, any_expanded);
 

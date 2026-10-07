@@ -1,0 +1,170 @@
+.TH TNES 1 "7 Oct 2026"
+.SH NAME
+tnes \- outliner, planner, organizer, notebook (Tines fork)
+.SH SYNOPSIS
+.B tnes
+.RI [ options ]
+.RI [ file ]
+.RI [ command
+.RI [ command ]
+\&\.\\.\.]
+.
+.SH DESCRIPTION
+.B tnes
+is a fork of
+.B Tines
+(or, more precisely, of Tines' ancestor hnb):
+an ncurses-based outliner
+with planning and organizing capabilities.
+You can use it in two different ways:
+.IP \[bu] 4
+As an outliner, reading and writing
+to the file specified on the command line.
+tnes supports OPML, its own XML-based format,
+or indented ASCII.
+.IP \[bu]
+As an organizer, storing outlines, calendars,
+action lists, project lists, tracking lists,
+notes, and most other kinds of text data, in a single file.
+.LP
+tnes can import and export OPML and indented text files,
+and additionally can export to
+HTML, PostScript, Markdown, and Groff\ -ms.
+.LP
+Running tnes without specifying a file
+loads the default ~/.tines file.
+If the file does not exist, tnes creates the file
+and populates it with example data.
+.LP
+tnes is drop-in compatible with Tines and shares its data:
+the same database, configuration file, and file formats,
+so both programs can be used on the same data.
+.
+.SH IMPROVEMENTS OVER TINES
+.TP 4
+.B Autosave on Enter
+Committing an entry (finishing a new node or editing an
+existing one with return) runs the same
+.B save
+command that the F2 key is bound to, so the database is
+written to disk after every edit.
+.TP
+.B Session restore
+The cursor position and the expanded nodes are remembered
+in a sidecar file, \fI<database>_tnes_session\fP
+(for the default database: \fI~/.tines_tnes_session\fP),
+and restored on the next launch.
+The file is plain text and is rewritten only when the state
+actually changes; deleting it just disables restore until
+it is recreated.
+.
+.SH OPTIONS
+tnes can be invoked with the following options:
+.TP 4
+.B \-h, \-\-help
+Shows a summary of options.
+.TP
+.B \-v, \-\-version
+Shows the version of tnes on your system.
+.TP
+.B \-t, \-\-tutorial
+Loads an example database instead of a file.
+.TP
+.B \-a, \-\-ascii
+Loads the file as indented plain text.
+.TP
+.B \-\-hnb
+Loads the file as hnb format (default).
+.TP
+.B \-o, \-\-opml
+Loads the file as OPML format.
+.TP
+.B \-x, \-\-xml
+Loads the file as XML format.
+.TP
+.BR \-\-rc= <\fIfile\fP>
+Loads the specified config file (the default is ~/.tinesrc).
+.TP
+.BR \--ui =< curses | cli >
+Specifies the user interface to use.
+The default is
+.BR curses .
+The
+.B cli
+option is useful for scripting tnes,
+or debugging and testing.
+.TP
+.B \-e
+Runs CLI commands in noninteractive mode.
+In this mode, tnes starts in CLI mode.
+Type `help' to get more information.
+.
+.SH EXAMPLES
+.TP 4
+Work on an existing OPML outline:
+tnes --opml newdoc.opml
+.TP
+Load an alternate rc file:
+tnes --rc ~/share/xslxport.rc
+.TP
+Display items under today's calendar entry:
+tnes -e 'today' 'go right' 'ls'
+.TP
+Print a quick reference of commands and variables:
+tnes -e 'help' 'show_vars'
+.
+.SH FILES
+.TP 4
+~/.tines
+The default file for your notes.
+To use a different file, specify its name on the command line.
+.TP
+~/.tinesrc
+The default configuration file.
+To load an other config file than default,
+use the
+.B --rc
+command-line option.
+.TP
+~/.tines_tnes_session
+The session sidecar for the default database
+(\fI<database>_tnes_session\fP in general):
+cursor position and expanded nodes for the next launch.
+.
+.SH SEE ALSO
+.BR tines (1)
+for the original program,
+.BR topml (1),
+.BR tines_hnb (7),
+.BR tines_opml (7)
+.LP
+For more information on the usage of the program,
+load the tutorial or
+press
+.B F1
+while running tnes.
+.LP
+tnes is a fork of
+.IR Tines ,
+which is a fork of the
+.I hnb
+outliner,
+written by \[/O]yvind Kol\[:a]s (pippin@users.sourceforge.net).
+For information about Tines, see
+https://github.com/larrykollar/tines/wiki
+.LP
+To get the latest version of tnes, see
+https://github.com/Quantum-Quasar/tines/
+.
+.SH AUTHOR
+The original
+.I hnb
+was written by
+\[/O]yvind Kol\[:a]s (pippin@users.sourceforge.net).
+.LP
+Tines is maintained by Larry Kollar;
+tnes is a fork with a small set of quality-of-life additions.
+.LP
+This manual page was originally written by Andras Bali <drewie@bigfoot.com>,
+and has been heavily modified for Tines by Larry Kollar,
+and then for tnes by the tnes maintainers.

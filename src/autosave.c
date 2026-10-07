@@ -37,7 +37,7 @@ static void autosave_invoke(Node *pos){
 
 	if (prefs.db_file[0]!= (char) 255) { /* magic value when tutorial is shown */
 		{
-			char buf[4096];
+			char buf[MAXPATHLEN + 32];	/* db path + suffix + command */
 			
 			sprintf (buf, "export_binary %s_tines_rescue", prefs.db_file);		
 			docmd (node_root(pos), buf);

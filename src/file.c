@@ -196,8 +196,10 @@ static void* cmd_save (int argc, char **argv, void *data)
 	
 	if (prefs.db_file[0] != (char) 255) { /* magic value of tutorial */
 		{
-			char buf[4096];
-			char swapfile[MAXPATHLEN];
+			/* db_file can be up to MAXPATHLEN-1 plus a suffix, so the
+			   command/swap buffers need headroom over 4096 */
+			char buf[MAXPATHLEN + 64];
+			char swapfile[MAXPATHLEN + 16];
 
 			sprintf(swapfile,"%s_tines_rescue",prefs.db_file);
 			/* remove(swapfile); when not removing it works as a lockfile */
@@ -228,7 +230,7 @@ static void* cmd_revert (int argc,char **argv, void *data)
 
 	if (prefs.db_file[0] != (char) 255) {
 		{
-			char buf[4096];
+			char buf[MAXPATHLEN + 64];
 
 			sprintf (buf, "import_%s %s", prefs.format, prefs.db_file);
 			node_free(pos);

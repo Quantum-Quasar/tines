@@ -67,7 +67,8 @@ static void usage (const char *av0)
 			 "\nusage: %s [database] [options] [command [command] ..]\n",
 			 av0);
 	fprintf (stderr, "\n\
-Tines by Larry Kollar (lkollar@gmail.com), a fork of hnb by Oyvind Kolas\n\
+tnes, based on Tines by Larry Kollar (lkollar@gmail.com),\
+ a fork of hnb by Oyvind Kolas\n\
 It is distributed under the GNU General Public License.\n\
 \n\
 default database: '%s'\n", prefs.default_db_file);
@@ -140,7 +141,7 @@ int main (int argc, char **argv)
 		{ NULL,			0,				NULL,	0 }
 	};
 
-	strcpy(progname, argv[0]);
+	snprintf(progname, sizeof(progname), "%s", argv[0]);
 
 	while ((ch = getopt_long( argc, argv, "hvtaoxe", longopts, NULL )) != -1) {
 		switch(ch) {
@@ -268,7 +269,8 @@ int main (int argc, char **argv)
 		if (!file_check (prefs.db_file))
 			prefs.tutorial = 2;
 	} else {
-		strcpy (prefs.db_file, cmdline.dbfile);
+		snprintf (prefs.db_file, sizeof (prefs.db_file), "%s",
+				  cmdline.dbfile);
 	}
 
 	pos = tree_new ();

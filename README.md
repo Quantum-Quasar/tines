@@ -25,8 +25,8 @@ data is shared between both programs.
   simply ignored rather than restoring bogus positions.
 
 * **`tnes` instead of `tines`.** The binary is renamed so both can
-  coexist (the repo/package name is tnes; the in-program branding
-  still says Tines).
+  coexist (the repo/package name is tnes; the in-program strings
+  attribute the original: "tnes, based on Tines by Larry Kollar").
 
 The session file is plain text (`cursor <n>` and `expanded <n>` lines
 numbered by depth-first walk from the first visible node), so it is
@@ -43,7 +43,25 @@ make install
 ```
 
 That puts the `tnes` binary in `~/.local/bin` and libcli in
-`~/.local/lib`.
+`~/.local/lib`, and installs this manpage as `man tnes`. (Note that
+the shared data files from `doc/`, such as the starter rc, are not
+installed by the build; on a fresh machine tnes generates default
+preferences instead, and `doc/tines.1` remains the upstream
+manpage.)
+
+## Testing
+
+With tmux installed and `src/tnes` built, run the headless smoke
+test:
+
+```
+tests/session-smoke.sh
+```
+
+It exercises autosave-on-enter, hostile session files, and the
+cursor/expansion round-trip inside a throwaway `HOME` (exit 0 = pass,
+77 = skipped, 1 = failure). It only touches the tmux session named
+`smoke`; other tmux sessions are left alone.
 
 ---
 

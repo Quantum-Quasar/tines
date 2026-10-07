@@ -1,4 +1,4 @@
-tnes 1.11.1 (fork of tines 1.11.1)
+tnes 1.12.0 (fork of tines 1.12.0)
 
 	* Renamed the program to tnes so it can coexist with tines.
 	  It still uses the same database, configuration, and file
@@ -12,6 +12,22 @@ tnes 1.11.1 (fork of tines 1.11.1)
 	  restored on the next launch. Updated on every save, quit,
 	  timed autosave, and keypress (written only when changed).
 
+	* Session files are now written atomically (write to a temp
+	  file, then rename), so a crash cannot leave a truncated
+	  session file behind.
+
+	* Session parsing hardened: values must be plain numbers
+	  ("expanded banana" is ignored instead of being read as 0),
+	  and a cursor saved at the first node is now restored too.
+
 	* New commands: session_save, session_restore.
 
-	* New files: src/session.c, src/session.h.
+	* New files: src/session.c, src/session.h, tests/session-smoke.sh,
+	  doc/tnes.1 (installed as the tnes manpage).
+
+	* Fixed argv/database path buffer sizes (strncat-bounded copies
+	  for argv[0] and the database argument, larger stack buffers
+	  for rescue/session paths).
+
+	* The binary now reports version 1.12.0, matching configure.ac
+	  (src/config.h previously said 1.11.1).
